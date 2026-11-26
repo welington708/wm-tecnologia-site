@@ -1,0 +1,19 @@
+{
+  "name": "wm-tecnologia-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "validate:public": "node scripts/validate-public-output.mjs",
+    "validate:release": "node scripts/validate-production-config.mjs",
+    "check": "npm run build && npm run validate:public"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "7.3.7"
+  }
+}
