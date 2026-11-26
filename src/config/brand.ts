@@ -2,21 +2,20 @@ type BrandConfig = {
   brandName: string;
   consultantName: string | null;
   siteUrl: string | null;
-  whatsappNumber: string | null;
   contactEmail: string | null;
+  contactFormEndpoint: string | null;
   showPublicPrices: boolean;
-  releaseScope: 'landing-whatsapp-v1';
+  releaseScope: 'landing-contact-form-v2';
 };
 
 export const brandConfig: BrandConfig = {
   brandName: 'WM Tecnologia',
   consultantName: null,
   siteUrl: null,
-  whatsappNumber: null,
   contactEmail: null,
+  // Use um endpoint HTTPS verificado de Formspree, Web3Forms ou serviço equivalente.
+  // Nunca coloque senha, token secreto ou credencial privada no frontend.
+  contactFormEndpoint: null,
   showPublicPrices: false,
-  releaseScope: 'landing-whatsapp-v1',
+  releaseScope: 'landing-contact-form-v2',
 };
-
-export const whatsappMessage =
-  'Olá! Vim pelo site da WM Tecnologia e gostaria de conversar sobre uma demanda de Salesforce.';

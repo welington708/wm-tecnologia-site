@@ -1,42 +1,70 @@
 import './styles.css';
-import { brandConfig, whatsappMessage } from './config/brand';
-import { buildMailtoLink, buildWhatsAppLink } from './lib/contact-links';
+import { brandConfig } from './config/brand';
 
-const contactStatus = document.querySelector<HTMLElement>('[data-contact-status]');
-const whatsappTargets = document.querySelectorAll<HTMLAnchorElement>('[data-whatsapp]');
-const emailTargets = document.querySelectorAll<HTMLElement>('[data-email-wrap]');
+const contactForm = document.querySelector<HTMLFormElement>('[data-contact-form]');
+const formStatus = document.querySelector<HTMLElement>('[data-form-status]');
+const formPending = document.querySelector<HTMLElement>('[data-form-pending]');
+const submitButton = contactForm?.querySelector<HTMLButtonElement>('button[type="submit"]');
+const endpoint = brandConfig.contactFormEndpoint;
 
-if (brandConfig.whatsappNumber) {
-  const href = buildWhatsAppLink(brandConfig.whatsappNumber, whatsappMessage);
-  whatsappTargets.forEach((target) => {
-    target.href = href;
-    target.target = '_blank';
-    target.rel = 'noreferrer';
-  });
-  contactStatus?.remove();
-} else {
-  whatsappTargets.forEach((target) => {
-    target.removeAttribute('href');
-    target.setAttribute('aria-disabled', 'true');
-    target.addEventListener('click', (event) => event.preventDefault());
-  });
+function setFormStatus(message: string, state: 'idle' | 'loading' | 'success' | 'error'): void {
+  if (!formStatus) return;
+  formStatus.textContent = message;
+  formStatus.dataset.state = state;
 }
 
-const contactEmail = brandConfig.contactEmail;
-if (contactEmail) {
-  emailTargets.forEach((wrap) => {
-    wrap.hidden = false;
-    const link = wrap.querySelector<HTMLAnchorElement>('[data-email]');
-    const copy = wrap.querySelector<HTMLButtonElement>('[data-copy-email]');
-    if (link) {
-      link.href = buildMailtoLink(contactEmail);
-      link.textContent = contactEmail;
-    }
-    copy?.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(contactEmail);
-      copy.textContent = 'E-mail copiado';
+if (contactForm && submitButton) {
+  if (!endpoint) {
+    submitButton.disabled = true;
+    submitButton.title = 'O canal de recebimento ainda não foi configurado.';
+    setFormStatus('Envio desativado nesta prévia.', 'idle');
+  } else {
+    formPending?.remove();
+    contactForm.action = endpoint;
+
+    contactForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!contactForm.reportValidity()) return;
+
+      const formData = new FormData(contactForm);
+      if (String(formData.get('website') ?? '').trim()) {
+        contactForm.reset();
+        setFormStatus('Mensagem recebida.', 'success');
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.dataset.label = submitButton.textContent ?? 'Enviar solicitação';
+      submitButton.textContent = 'Enviando…';
+      contactForm.setAttribute('aria-busy', 'true');
+      setFormStatus('Enviando sua solicitação com segurança…', 'loading');
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error(`Falha no envio: ${response.status}`);
+
+        contactForm.reset();
+        setFormStatus(
+          'Solicitação enviada. Obrigado! O retorno será feito pelos dados informados.',
+          'success',
+        );
+      } catch {
+        setFormStatus(
+          'Não foi possível enviar agora. Revise sua conexão e tente novamente em alguns instantes.',
+          'error',
+        );
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = submitButton.dataset.label ?? 'Enviar solicitação';
+        contactForm.removeAttribute('aria-busy');
+      }
     });
-  });
+  }
 }
 
 const menuButton = document.querySelector<HTMLButtonElement>('[data-menu-button]');
